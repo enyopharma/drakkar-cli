@@ -1,0 +1,56 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Set up the autoloader.
+ */
+require __DIR__ . '/vendor/autoload.php';
+
+/**
+ * Complete the env with local values.
+ */
+if (file_exists($envfile = __DIR__ . '/.env')) {
+    (new Symfony\Component\Dotenv\Dotenv)->overload($envfile);
+}
+
+/**
+ * Create a PDO instance.
+ */
+$pdo = new PDO(
+    vsprintf('pgsql:host=%s;port=%s;dbname=%s', [
+        $_ENV['DB_HOSTNAME'] ?? 'localhost',
+        $_ENV['DB_PORT'] ?? '5432',
+        $_ENV['DB_DATABASE'] ?? 'database',
+    ]),
+    $_ENV['DB_USERNAME'] ?? 'username',
+    $_ENV['DB_PASSWORD'] ?? 'password',
+    [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ],
+);
+
+/**
+ * Create the actions.
+ */
+$store_hh_run = new App\Actions\StoreRunSql($pdo, 'hh');
+$store_vh_run = new App\Actions\StoreRunSql($pdo, 'vh');
+$populate_run = new App\Actions\PopulateRunSql($pdo);
+$populate_publication = new App\Actions\PopulatePublicationSql($pdo, new App\Services\Efetch);
+
+/**
+ * Build the application.
+ */
+$application = new Symfony\Component\Console\Application;
+
+$application->add(new App\Commands\CreateRunCommand($store_hh_run));
+$application->add(new App\Commands\CreateRunCommand($store_vh_run));
+$application->add(new App\Commands\PopulateRunCommand($populate_run));
+$application->add(new App\Commands\PopulatePublicationCommand($populate_publication));
+
+/**
+ * Run the application.
+ */
+$application->run();
