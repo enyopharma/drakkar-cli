@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use App\Actions\PopulateRunInterface;
+use App\Actions\PopulateRunResultType;
 
 final class PopulateRunCommand extends Command
 {
@@ -44,11 +45,11 @@ final class PopulateRunCommand extends Command
         // execute the action and produce a response.
         $result = $this->action->populate($id, $populate);
 
-        return match ($result->status()) {
-            0 => $this->success($output, $result->name()),
-            1 => $this->notfound($output, $id),
-            2 => $this->alreadyPopulated($output, $result->name()),
-            3 => $this->failure($output, $result->name()),
+        return match ($result->type) {
+            PopulateRunResultType::Success => $this->success($output, $id, ...$result->xs),
+            PopulateRunResultType::NotFound => $this->notfound($output, $id),
+            PopulateRunResultType::AlreadyPopulated => $this->alreadyPopulated($output, $id, ...$result->xs),
+            PopulateRunResultType::Failure => $this->failure($output, $id, ...$result->xs),
         };
     }
 
@@ -61,10 +62,14 @@ final class PopulateRunCommand extends Command
         throw new \Exception('no application');
     }
 
-    private function success(OutputInterface $output, string $name): int
+    private function success(OutputInterface $output, int $id, string $type, string $name): int
     {
         $output->writeln(
-            sprintf('<info>Metadata of curation run \'%s\' publications successfully updated.</info>', $name)
+            vsprintf('<info>Metadata of curation run [type => %s, id => %s, name => %s] publications successfully updated.</info>', [
+                $type,
+                $id,
+                $name,
+            ])
         );
 
         return 0;
@@ -73,25 +78,33 @@ final class PopulateRunCommand extends Command
     private function notfound(OutputInterface $output, int $id): int
     {
         $output->writeln(
-            sprintf('<error>No run with [\'id\' => %s]</error>', $id)
+            sprintf('<error>No run with id %s</error>', $id)
         );
 
         return 1;
     }
 
-    private function alreadyPopulated(OutputInterface $output, string $name): int
+    private function alreadyPopulated(OutputInterface $output, int $id, string $type, string $name): int
     {
         $output->writeln(
-            sprintf('<info>Metadata of curation run \'%s\' publications are already populated</info>', $name)
+            vsprintf('<info>Metadata of curation run [type => %s, id => %s, name => %s] publications are already populated</info>', [
+                $type,
+                $id,
+                $name,
+            ])
         );
 
         return 1;
     }
 
-    private function failure(OutputInterface $output, string $name): int
+    private function failure(OutputInterface $output, int $id, string $type, string $name): int
     {
         $output->writeln(
-            sprintf('<error>Failed to retrieve metadata of run \'%s\' publications</error>', $name)
+            vsprintf('<error>Failed to retrieve metadata of run [type => %s, id => %s, name => %s] publications</error>', [
+                $type,
+                $id,
+                $name,
+            ])
         );
 
         return 1;

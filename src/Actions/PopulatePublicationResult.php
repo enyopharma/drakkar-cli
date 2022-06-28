@@ -6,56 +6,32 @@ namespace App\Actions;
 
 final class PopulatePublicationResult
 {
-    const SUCCESS = 0;
-    const NOT_FOUND = 1;
-    const ALREADY_POPULATED = 2;
-    const PARSING_ERROR = 3;
-
     public static function success(): self
     {
-        return new self(self::SUCCESS);
+        return new self(PopulatePublicationResultType::Success);
     }
 
     public static function notFound(): self
     {
-        return new self(self::NOT_FOUND);
+        return new self(PopulatePublicationResultType::NotFound);
     }
 
     public static function alreadyPopulated(): self
     {
-        return new self(self::ALREADY_POPULATED);
+        return new self(PopulatePublicationResultType::AlreadyPopulated);
     }
 
     public static function parsingError(string $message): self
     {
-        return new self(self::PARSING_ERROR, $message);
+        return new self(PopulatePublicationResultType::ParsingError, [$message]);
     }
 
     /**
-     * @param 0|1|2|3 $status
+     * @param array<mixed> $xs
      */
     private function __construct(
-        private int $status,
-        private string $message = '',
+        public readonly PopulatePublicationResultType $type,
+        public readonly array $xs = [],
     ) {
-    }
-
-    /**
-     * @return 0|1|2|3
-     */
-    public function status()
-    {
-        return $this->status;
-    }
-
-    public function message(): string
-    {
-        $types = [self::PARSING_ERROR];
-
-        if (in_array($this->status, $types, true)) {
-            return $this->message;
-        }
-
-        throw new \LogicException('Result has no message');
     }
 }

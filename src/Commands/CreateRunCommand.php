@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use App\Actions\StoreRunInterface;
+use App\Actions\StoreRunResultType;
 
 final class CreateRunCommand extends Command
 {
@@ -35,33 +36,28 @@ final class CreateRunCommand extends Command
         try {
             $pmids = $this->pmidsFromStdin();
         } catch (\UnexpectedValueException $e) {
-            return $this->invalidPmid($output, $e->getMessage());
+            $output->writeln(sprintf('<error>%s</error>', $e->getMessage()));
+
+            return 1;
         }
 
         $result = $this->action->store($name, ...$pmids);
 
-        return match ($result->status()) {
-            0 => $this->success($output, $result->id()),
-            1 => $this->noPmid($output),
-            2 => $this->runAlreadyExists($output, $result->id(), $result->name()),
-            3 => $this->associationAlreadyExists($output, $result->id(), $result->name(), $result->pmid()),
+        return match ($result->type) {
+            StoreRunResultType::Success => $this->success($output, $result->id()),
+            StoreRunResultType::NoPmid => $this->noPmid($output),
+            StoreRunResultType::RunAlreadyExists => $this->runAlreadyExists($output, $name, ...$result->xs),
+            StoreRunResultType::AssociationAlreadyExists => $this->associationAlreadyExists($output, ...$result->xs),
         };
     }
 
     private function success(OutputInterface $output, int $id): int
     {
         $output->writeln(
-            sprintf('<info>Curation run created with [\'id\' => %s].</info>', $id)
+            sprintf('<info>Curation run created with id %s.</info>', $id)
         );
 
         return 0;
-    }
-
-    private function invalidPmid(OutputInterface $output, string $message): int
-    {
-        $output->writeln(sprintf('<error>%s</error>', $message));
-
-        return 1;
     }
 
     private function noPmid(OutputInterface $output): int
@@ -71,13 +67,14 @@ final class CreateRunCommand extends Command
         return 1;
     }
 
-    private function runAlreadyExists(OutputInterface $output, int $id, string $name): int
+    private function runAlreadyExists(OutputInterface $output, string $name, int $id): int
     {
         $output->writeln(
-            vsprintf('<error>Name \'%s\' already used by \'%s\' curation run %s</error>', [
+            vsprintf('<error>Name \'%s\' already used by curation run [type => %s, id => %s, name => %s]</error>', [
                 $name,
                 $this->action->type(),
                 $id,
+                $name,
             ]),
         );
 
@@ -87,7 +84,7 @@ final class CreateRunCommand extends Command
     private function associationAlreadyExists(OutputInterface $output, int $run_id, string $run_name, int $pmid): int
     {
         $output->writeln(
-            vsprintf('<error>Publication with PMID %s is already associated with \'%s\' curation run %s (\'%s\')</error>', [
+            vsprintf('<error>Publication [pmid => %s] is already associated with curation run [type => %s, id => %s, name => %s]</error>', [
                 $pmid,
                 $this->action->type(),
                 $run_id,

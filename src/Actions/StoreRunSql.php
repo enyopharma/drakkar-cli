@@ -72,7 +72,7 @@ final class StoreRunSql implements StoreRunInterface
         $select_run_sth->execute([$name]);
 
         if ($run = $select_run_sth->fetch()) {
-            return StoreRunResult::runAlreadyExists($run['id'], $run['name']);
+            return StoreRunResult::runAlreadyExists($run['id']);
         }
 
         // return an error when any publication is already associated with a

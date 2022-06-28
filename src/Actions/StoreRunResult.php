@@ -6,80 +6,39 @@ namespace App\Actions;
 
 final class StoreRunResult
 {
-    const SUCCESS = 0;
-    const NO_PMID = 1;
-    const RUN_ALREADY_EXISTS = 2;
-    const ASSOCIATION_ALREADY_EXISTS = 3;
-
     public static function success(int $id): self
     {
-        return new self(self::SUCCESS, $id);
+        return new self(StoreRunResultType::Success, [$id]);
     }
 
     public static function noPmid(): self
     {
-        return new self(self::NO_PMID);
+        return new self(StoreRunResultType::NoPmid);
     }
 
-    public static function runAlreadyExists(int $id, string $name): self
+    public static function runAlreadyExists(int $id): self
     {
-        return new self(self::RUN_ALREADY_EXISTS, $id, $name);
+        return new self(StoreRunResultType::RunAlreadyExists, [$id]);
     }
 
-    public static function associationAlreadyExists(int $id, string $name, int $pmid): self
+    public static function associationAlreadyExists(int $run_id, string $run_name, int $pmid): self
     {
-        return new self(self::ASSOCIATION_ALREADY_EXISTS, $id, $name, $pmid);
+        return new self(StoreRunResultType::AssociationAlreadyExists, [$run_id, $run_name, $pmid]);
     }
 
     /**
-     * @param 0|1|2|3 $status
+     * @param array<mixed> $xs
      */
-    private function __construct(
-        private int $status,
-        private ?int $id = null,
-        private string $name = '',
-        private ?int $pmid = null,
-    ) {
-    }
-
-    /**
-     * @return 0|1|2|3
-     */
-    public function status()
+    private function __construct(public readonly StoreRunResultType $type, public readonly array $xs = [])
     {
-        return $this->status;
     }
 
     public function id(): int
     {
-        $types = [self::SUCCESS, self::RUN_ALREADY_EXISTS, self::ASSOCIATION_ALREADY_EXISTS];
-
-        if (in_array($this->status, $types, true) && !is_null($this->id)) {
-            return $this->id;
+        if ($this->type === StoreRunResultType::Success) {
+            return $this->xs[0];
         }
 
         throw new \LogicException('Result has no id');
-    }
-
-    public function name(): string
-    {
-        $types = [self::RUN_ALREADY_EXISTS, self::ASSOCIATION_ALREADY_EXISTS];
-
-        if (in_array($this->status, $types, true)) {
-            return $this->name;
-        }
-
-        throw new \LogicException('Result has no name');
-    }
-
-    public function pmid(): int
-    {
-        $types = [self::ASSOCIATION_ALREADY_EXISTS];
-
-        if (in_array($this->status, $types, true) && !is_null($this->pmid)) {
-            return $this->pmid;
-        }
-
-        throw new \LogicException('Result has no pmid');
     }
 }
