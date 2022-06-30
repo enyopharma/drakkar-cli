@@ -41,7 +41,7 @@ final class PopulateRunSql implements PopulateRunInterface
         }
 
         if ($run['populated']) {
-            return PopulateRunResult::alreadyPopulated($run['name']);
+            return PopulateRunResult::alreadyPopulated($run['type'], $run['name']);
         }
 
         // populate the run publications using the callable.
@@ -57,13 +57,13 @@ final class PopulateRunSql implements PopulateRunInterface
 
         // write a failure when there is errors.
         if ($errors > 0) {
-            return PopulateRunResult::failure($run['name']);
+            return PopulateRunResult::failure($run['type'], $run['name']);
         }
 
         // update the run to ensure it is in populated state (ex = all publications already populated)
         $update_run_sth->execute([$id]);
 
         // success !
-        return PopulateRunResult::success($run['name']);
+        return PopulateRunResult::success($run['type'], $run['name']);
     }
 }

@@ -6,9 +6,9 @@ namespace App\Actions;
 
 final class PopulateRunResult
 {
-    public static function success(string $name): self
+    public static function success(string $type, string $name): self
     {
-        return new self(PopulateRunResultType::Success, [$name]);
+        return new self(PopulateRunResultType::Success, [$type, $name]);
     }
 
     public static function notFound(): self
@@ -16,14 +16,14 @@ final class PopulateRunResult
         return new self(PopulateRunResultType::NotFound);
     }
 
-    public static function alreadyPopulated(string $name): self
+    public static function alreadyPopulated(string $type, string $name): self
     {
-        return new self(PopulateRunResultType::AlreadyPopulated, [$name]);
+        return new self(PopulateRunResultType::AlreadyPopulated, [$type, $name]);
     }
 
-    public static function failure(string $name): self
+    public static function failure(string $type, string $name): self
     {
-        return new self(PopulateRunResultType::Failure, [$name]);
+        return new self(PopulateRunResultType::Failure, [$type, $name]);
     }
 
     /**
