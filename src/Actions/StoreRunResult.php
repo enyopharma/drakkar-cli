@@ -21,16 +21,18 @@ final class StoreRunResult
         return new self(StoreRunResultType::RunAlreadyExists, [$id]);
     }
 
-    public static function associationAlreadyExists(int $run_id, string $run_name, int $pmid): self
+    public static function noNewPmid(): self
     {
-        return new self(StoreRunResultType::AssociationAlreadyExists, [$run_id, $run_name, $pmid]);
+        return new self(StoreRunResultType::NoNewPmid);
     }
 
     /**
      * @param array<mixed> $xs
      */
-    private function __construct(public readonly StoreRunResultType $type, public readonly array $xs = [])
-    {
+    private function __construct(
+        public readonly StoreRunResultType $type,
+        public readonly array $xs = [],
+    ) {
     }
 
     public function id(): int

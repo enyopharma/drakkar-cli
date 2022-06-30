@@ -47,7 +47,7 @@ final class CreateRunCommand extends Command
             StoreRunResultType::Success => $this->success($output, $result->id()),
             StoreRunResultType::NoPmid => $this->noPmid($output),
             StoreRunResultType::RunAlreadyExists => $this->runAlreadyExists($output, $name, ...$result->xs),
-            StoreRunResultType::AssociationAlreadyExists => $this->associationAlreadyExists($output, ...$result->xs),
+            StoreRunResultType::NoNewPmid => $this->noNewPmid($output),
         };
     }
 
@@ -81,14 +81,11 @@ final class CreateRunCommand extends Command
         return 1;
     }
 
-    private function associationAlreadyExists(OutputInterface $output, int $run_id, string $run_name, int $pmid): int
+    private function noNewPmid(OutputInterface $output): int
     {
         $output->writeln(
-            vsprintf('<error>Publication [pmid => %s] is already associated with curation run [type => %s, id => %s, name => %s]</error>', [
-                $pmid,
+            vsprintf('<error>All pmid are already associated with other %s runs</error>', [
                 $this->action->type(),
-                $run_id,
-                $run_name,
             ])
         );
 

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Assertions\RunType;
-
 final class StoreRunSql implements StoreRunInterface
 {
     const INSERT_RUN_SQL = <<<SQL
@@ -29,7 +27,7 @@ final class StoreRunSql implements StoreRunInterface
     SQL;
 
     const SELECT_PUBLICATIONS_SQL = <<<SQL
-        SELECT r.id AS run_id, r.type AS run_type, r.name AS run_name, a.pmid
+        SELECT a.pmid
         FROM runs AS r, associations AS a
         WHERE r.id = a.run_id
         AND r.type = ?
@@ -75,16 +73,17 @@ final class StoreRunSql implements StoreRunInterface
             return StoreRunResult::runAlreadyExists($run['id']);
         }
 
-        // return an error when any publication is already associated with a
-        // publication curation run of the same type.
+        // select the pmid of the publications already associated with a curation
+        // run of the same type, then remove them from the pmid array. Error when
+        // no pmid is not already present.
         $select_publications_sth->execute(array_merge([$this->type], $pmids));
 
-        if ($publication = $select_publications_sth->fetch()) {
-            return StoreRunResult::associationAlreadyExists(
-                $publication['run_id'],
-                $publication['run_name'],
-                $publication['pmid'],
-            );
+        $existing = $select_publications_sth->fetchAll(\PDO::FETCH_COLUMN);
+
+        $diff = array_diff($pmids, $existing);
+
+        if (count($diff) == 0) {
+            return StoreRunResult::noNewPmid();
         }
 
         // insert the curation run, the missing pmids and associations.
@@ -94,7 +93,7 @@ final class StoreRunSql implements StoreRunInterface
 
         $id = (int) $this->pdo->lastInsertId();
 
-        foreach ($pmids as $pmid) {
+        foreach ($diff as $pmid) {
             $select_publication_sth->execute([$pmid]);
 
             if (!$select_publication_sth->fetch()) {

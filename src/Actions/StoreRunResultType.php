@@ -9,5 +9,5 @@ enum StoreRunResultType
     case Success;
     case NoPmid;
     case RunAlreadyExists;
-    case AssociationAlreadyExists;
+    case NoNewPmid;
 }
